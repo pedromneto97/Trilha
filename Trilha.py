@@ -44,7 +44,7 @@ class Trilha(Game):
                     else:
                         self.adjacentes.update({x: [x - 8, x - 1, x + 1]})
         """Estado inicial"""
-        self.initial = GameState(to_move='BRANCO', utility=0, board={}, moves=vazio)
+        self.initial = GameState(to_move="BRANCO", utility=0, board={"BRANCO": 0, "PRETO": 0}, moves=vazio)
 
     def actions(self, state):
         """Deve retornar uma lista de movimentos disponíveis neste ponto, assim temos vários casos.
@@ -52,6 +52,7 @@ class Trilha(Game):
             - Quando colocar três peças adjacentes
             - Quando acabar as peças e poder movimentar uma peça no tabuleiro caso tenha espaço nas adjacências
             """
+        return state.moves
         # Procura uma substring
         p = str.find(state.to_move, "_REMOVE")
         # Caso encontre
@@ -66,15 +67,12 @@ class Trilha(Game):
             return jogadas
         # Jogadas já feitas
         jogadas = []
-        # Quantidade de peças brancas no tabuleiro
-        cont = 0
         # POS é o número no tabuleiro e to é quem jogou
         for pos, to in state.board.items():
             if to == state.to_move:
-                cont = cont + 1
                 jogadas.append(pos)
         # Verifica se tem menos de 9 peças de quem está jogando no tabuleiro
-        if cont < 9:
+        if state.board[state.to_move] < 9:
             # Retorna todos os espaços vazios
             return state.moves
         else:
@@ -90,7 +88,37 @@ class Trilha(Game):
 
     def result(self, state, move):
         """Deve retornar o estado que ficará o jogo quando uma é aplicado um movimento a um estado anterior"""
-        return GameState()
+        # Movimentos ilegais não tem efeitos
+        if move not in state.moves:
+            return state
+        # Próximo a mover
+        to_move = ""
+        # Copia o tabuleiro
+        board = state.board.copy()
+        utility = 0
+        # Jogadas
+        moves = []
+        # Procura uma substring
+        p = str.find(state.to_move, "_REMOVE")
+        if p != -1:
+            del (board[move])
+            if state.to_move[:p] == "BRANCO":
+                to_move = "PRETO"
+            else:
+                to_move = "BRANCO"
+        else:
+            if board[state.to_move] < 9:
+                board[move] = state.to_move
+                board[state.to_move] = board[state.to_move] + 1
+            else:
+                board[move[1]] = state.to_move
+                del (board[move[0]])
+            if state.to_move == "BRANCO":
+                to_move = "PRETO"
+            else:
+                to_move = "BRANCO"
+
+        return GameState(to_move=to_move, utility=utility, board=board, moves=moves)
 
     def utility(self, state, player):
         """Retorna o estado final para o jogador. 0 se o jogo não acabou, 1 se o player passado ganhou ou -1 se ele
@@ -100,3 +128,55 @@ class Trilha(Game):
     def terminal_test(self, state):
         """Retorna verdadeiro se é o estado final do jogo"""
         return state.utility != 0
+
+    def compute_utility(self, state):
+        """Verifica se ouve algum ganhador"""
+        return 0
+
+    def verifica_trinca(self, state, move):
+        """Verifica se houve alguma trinca com o movimento"""
+        adjacente = self.adjacentes[move]
+        # Caso move seja ímpar
+        if (move % 2) == 1:
+            # Verifica se é 1,9 ou 17
+            if (move % 8) == 1:
+                if ((move + 1) in state.board.keys() and state.board[move + 1] == state.to_move and (
+                        move + 2) in state.board.keys() and state.board[move + 2] == state.to_move) or (
+                        (move + 7) in state.board.keys() and state.board[move + 7] == state.to_move and (
+                        move + 6) in state.board.keys() and state.board[move + 6] == state.to_move):
+                    return True
+                else:
+                    return False
+            elif ((move - 1) in state.board.keys() and state.board[move - 1] == state.to_move and (
+                    move - 2) in state.board.keys() and state.board[move - 2] == state.to_move) or (
+                    (move + 1) in state.board.keys() and state.board[move + 1] == state.to_move and (
+                    move + 2) in state.board.keys() and state.board[move + 2] == state.to_move):
+                return True
+            else:
+                return False
+        # Caso par
+        else:
+            if (move % 8) == 0:
+                if (move - 7) in state.board.keys() and state.board[move - 7] == state.to_move and (
+                        move - 1) in state.board.keys() and state.board[move - 1] == state.to_move:
+                    return True
+            if move <= 8:
+                if (move + 8) in state.board.keys() and state.board[move + 8] == state.to_move and (
+                        move + 16) in state.board.keys() and state.board[move + 16] == state.to_move:
+                    return True
+                else:
+                    return False
+            # De 9 até 16
+            elif move > 8 and move <= 16:
+                if (move - 8) in state.board.keys() and state.board[move - 8] == state.to_move and (
+                        move + 8) in state.board.keys() and state.board[move + 8] == state.to_move:
+                    return True
+                else:
+                    return False
+            # De 17 até 24
+            else:
+                if (move - 8) in state.board.keys() and state.board[move - 8] == state.to_move and (
+                        move - 16) in state.board.keys() and state.board[move - 16] == state.to_move:
+                    return True
+                else:
+                    return False
