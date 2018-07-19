@@ -13,7 +13,7 @@ class Trilha(Game):
         # Posições do tabuleiro sem peças
         vazio = [x for x in range(1, 25)]
         # Dicionário com todas as posições e seus adjacentes. Ex: {1: [2,8]}
-        self.self.adjacentes = {}
+        self.adjacentes = {}
         # Cria os adjacentes
         for x in range(1, 25):
             # Caso x seja ímpar
@@ -43,9 +43,6 @@ class Trilha(Game):
                         self.adjacentes.update({x: [x - 8, x - 7, x - 1]})
                     else:
                         self.adjacentes.update({x: [x - 8, x - 1, x + 1]})
-        """Quantidade de peças disponíveis para jogar"""
-        self.branco = 9
-        self.preto = 9
         """Estado inicial"""
         self.initial = GameState(to_move='BRANCO', utility=0, board={}, moves=vazio)
 
@@ -55,20 +52,41 @@ class Trilha(Game):
             - Quando colocar três peças adjacentes
             - Quando acabar as peças e poder movimentar uma peça no tabuleiro caso tenha espaço nas adjacências
             """
-        if state.to_move is 'BRANCO':
-            if self.branco > 0:
-                return state.moves
-            else:
-                jogadas = []
-                for pos, to in state.board.items():  # for name, age in list.items():  (for Python 3.x)
-                    if to == 'BRANCO':
-                        jogadas.append(pos)
-                moves = []
-        elif state.to_move is 'PRETO':
-            if self.preto > 0:
-                return state.moves
-            else:
-                return
+        # Procura uma substring
+        p = str.find(state.to_move, "_REMOVE")
+        # Caso encontre
+        if p != -1:
+            jogadas = []
+            # POS é o número no tabuleiro e to é quem jogou
+            for pos, to in state.board.items():
+                # Caso o estado seja "BRANCO_REMOVE" procura todas as peças preta
+                if not to == state.to_move[:p]:
+                    jogadas.append(pos)
+            # Retorna todas as peças possíveis de serem removidas
+            return jogadas
+        # Jogadas já feitas
+        jogadas = []
+        # Quantidade de peças brancas no tabuleiro
+        cont = 0
+        # POS é o número no tabuleiro e to é quem jogou
+        for pos, to in state.board.items():
+            if to == state.to_move:
+                cont = cont + 1
+                jogadas.append(pos)
+        # Verifica se tem menos de 9 peças de quem está jogando no tabuleiro
+        if cont < 9:
+            # Retorna todos os espaços vazios
+            return state.moves
+        else:
+            moves = []
+            for jogada in jogadas:
+                adjacente = self.adjacentes[jogada]
+                for a in adjacente:
+                    if a in state.moves:
+                        # Salva um tuple contendo (ORIGEM,DESTINO)
+                        moves.append((jogada, a))
+            # Retorna os movimentos disponíveis para mover a peça de uma casa a outra
+            return moves
 
     def result(self, state, move):
         """Deve retornar o estado que ficará o jogo quando uma é aplicado um movimento a um estado anterior"""
