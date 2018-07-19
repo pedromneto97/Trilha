@@ -47,77 +47,83 @@ class Trilha(Game):
         self.initial = GameState(to_move="BRANCO", utility=0, board={"BRANCO": 0, "PRETO": 0}, moves=vazio)
 
     def actions(self, state):
-        """Deve retornar uma lista de movimentos disponíveis neste ponto, assim temos vários casos.
-            - Quando tiver uma peça para jogar
-            - Quando colocar três peças adjacentes
-            - Quando acabar as peças e poder movimentar uma peça no tabuleiro caso tenha espaço nas adjacências
-            """
+        """Retorna todos os movimentos possíveis no momento"""
         return state.moves
-        # Procura uma substring
-        p = str.find(state.to_move, "_REMOVE")
-        # Caso encontre
-        if p != -1:
-            jogadas = []
-            # POS é o número no tabuleiro e to é quem jogou
-            for pos, to in state.board.items():
-                # Caso o estado seja "BRANCO_REMOVE" procura todas as peças preta
-                if not to == state.to_move[:p]:
-                    jogadas.append(pos)
-            # Retorna todas as peças possíveis de serem removidas
-            return jogadas
-        # Jogadas já feitas
-        jogadas = []
-        # POS é o número no tabuleiro e to é quem jogou
-        for pos, to in state.board.items():
-            if to == state.to_move:
-                jogadas.append(pos)
-        # Verifica se tem menos de 9 peças de quem está jogando no tabuleiro
-        if state.board[state.to_move] < 9:
-            # Retorna todos os espaços vazios
-            return state.moves
-        else:
-            moves = []
-            for jogada in jogadas:
-                adjacente = self.adjacentes[jogada]
-                for a in adjacente:
-                    if a in state.moves:
-                        # Salva um tuple contendo (ORIGEM,DESTINO)
-                        moves.append((jogada, a))
-            # Retorna os movimentos disponíveis para mover a peça de uma casa a outra
-            return moves
 
     def result(self, state, move):
         """Deve retornar o estado que ficará o jogo quando uma é aplicado um movimento a um estado anterior"""
         # Movimentos ilegais não tem efeitos
         if move not in state.moves:
             return state
-        # Próximo a mover
-        to_move = ""
         # Copia o tabuleiro
         board = state.board.copy()
         utility = 0
         # Jogadas
         moves = []
-        # Procura uma substring
+        # Procura uma substring e verifica caso seja a vez de alguém remover a peça
         p = str.find(state.to_move, "_REMOVE")
         if p != -1:
+            # Remove a peça do tabuleiro
             del (board[move])
+            # Define quem é o próximo a jogar
             if state.to_move[:p] == "BRANCO":
                 to_move = "PRETO"
             else:
                 to_move = "BRANCO"
+            # Verifica se alguém ganhou com essa jogada
+            utility = self.compute_utility(to_move)
+        # Caso não seja para remover a peça
         else:
+            # Verifica ainda tem peça para jogar no tabuleiro
             if board[state.to_move] < 9:
                 board[move] = state.to_move
                 board[state.to_move] = board[state.to_move] + 1
+            # Caso já tenham sido jogadas as peças, então é para mover uma peça no tabuleiro
             else:
+                # Define o destino
                 board[move[1]] = state.to_move
+                # Remove da origem
                 del (board[move[0]])
+            # Define quem é o próximo a jogar
             if state.to_move == "BRANCO":
-                to_move = "PRETO"
+                if self.verifica_trinca(state.board, move):
+                    to_move = "BRANCO_REMOVE"
+                else:
+                    to_move = "PRETO"
             else:
-                to_move = "BRANCO"
-
+                if self.verifica_trinca(state.board, move):
+                    to_move = "PRETO_REMOVE"
+                else:
+                    to_move = "BRANCO"
+        # Define os próximos movimentos
+        p = str.find(to_move, "_REMOVE")
+        # Caso o próximo movimento seja de remover
+        if p != -1:
+            # POS é o número no tabuleiro e to é quem jogou
+            for pos, to in board.items():
+                # Caso o estado seja "BRANCO_REMOVE" procura todas as peças preta
+                if not to == to_move[:p]:
+                    moves.append(pos)
+        # Caso o próximo movimento seja só colocar uma peça no tabuleiro
+        elif board[to_move] < 9:
+            moves = self.vazios(board)
+        # Caso o próximo movimento seja movimentar uma peça no tabuleiro
+        else:
+            jogadas = []
+            vazios = self.vazios(board)
+            for pos, to in board.items():
+                if to == to_move:
+                    # Salva todas as jogadas do próximo a mover a peça
+                    jogadas.append(pos)
+            # Verifica cada jogada
+            for jogada in jogadas:
+                # Pega os adjacentes de cada jogada
+                adjacente = self.adjacentes[jogada]
+                # Verifica em cada adjacente se ele está vazio
+                for a in adjacente:
+                    if a in vazios:
+                        # Salva um tuple contendo (ORIGEM,DESTINO)
+                        moves.append((jogada, a))
         return GameState(to_move=to_move, utility=utility, board=board, moves=moves)
 
     def utility(self, state, player):
@@ -129,8 +135,16 @@ class Trilha(Game):
         """Retorna verdadeiro se é o estado final do jogo"""
         return state.utility != 0
 
-    def compute_utility(self, state):
+    def compute_utility(self, board, player):
         """Verifica se ouve algum ganhador"""
+        if board[player] < 9:
+            return 0
+        cont = 0
+        for pos, to in board.items():
+            if to == player:
+                cont = cont + 1
+        if cont < 3:
+            return -1 if player == "BRANCO" else +1
         return 0
 
     def verifica_trinca(self, state, move):
@@ -180,3 +194,10 @@ class Trilha(Game):
                     return True
                 else:
                     return False
+
+    def vazios(self, board):
+        vazios = []
+        for x in range(1, 25):
+            if x not in board.keys():
+                vazios.append(x)
+        return vazios
