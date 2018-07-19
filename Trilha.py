@@ -174,6 +174,10 @@ class Trilha(Game):
                 if (move - 7) in state.board.keys() and state.board[move - 7] == state.to_move and (
                         move - 1) in state.board.keys() and state.board[move - 1] == state.to_move:
                     return True
+            elif (move - +1) in state.board.keys() and state.board[move - +1] == state.to_move and (
+                    move - 1) in state.board.keys() and state.board[move - 1] == state.to_move:
+                return True
+
             if move <= 8:
                 if (move + 8) in state.board.keys() and state.board[move + 8] == state.to_move and (
                         move + 16) in state.board.keys() and state.board[move + 16] == state.to_move:
