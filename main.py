@@ -22,7 +22,6 @@ class Jogo(GridLayout):
         # Instancia o jogo
         self.trilha = Trilha()
         self.estado = self.trilha.initial
-        # setrecursionlimit(1000000)
 
     def cria(self):
         # Linha 1
@@ -112,8 +111,12 @@ class Jogo(GridLayout):
                 button.background_color = [0, 0, 1, 2]
             self.estado = self.trilha.result(self.estado, id)
             print(self.estado)
-            # a = minimax_decision(self.estado, self.trilha)
-            # print(a)
+        if (self.estado.utility == 1):
+            self.clear_widgets()
+            self.add_widget(Label(text="BRANCO GANHOU"))
+        elif self.estado.utility == -1:
+            self.clear_widgets()
+            self.add_widget(Label(text="BRANCO PERDEU"))
 
 
 class MyApp(App):
