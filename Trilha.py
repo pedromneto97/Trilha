@@ -71,7 +71,7 @@ class Trilha(Game):
             else:
                 to_move = "BRANCO"
             # Verifica se alguém ganhou com essa jogada
-            utility = self.compute_utility(to_move)
+            utility = self.compute_utility(board, state.to_move[:p])
         # Caso não seja para remover a peça
         else:
             # Verifica ainda tem peça para jogar no tabuleiro
@@ -86,12 +86,12 @@ class Trilha(Game):
                 del (board[move[0]])
             # Define quem é o próximo a jogar
             if state.to_move == "BRANCO":
-                if self.verifica_trinca(state.board, move):
+                if self.verifica_trinca(state, move):
                     to_move = "BRANCO_REMOVE"
                 else:
                     to_move = "PRETO"
             else:
-                if self.verifica_trinca(state.board, move):
+                if self.verifica_trinca(state, move):
                     to_move = "PRETO_REMOVE"
                 else:
                     to_move = "BRANCO"
@@ -174,7 +174,7 @@ class Trilha(Game):
                 if (move - 7) in state.board.keys() and state.board[move - 7] == state.to_move and (
                         move - 1) in state.board.keys() and state.board[move - 1] == state.to_move:
                     return True
-            elif (move - +1) in state.board.keys() and state.board[move - +1] == state.to_move and (
+            elif (move + 1) in state.board.keys() and state.board[move + 1] == state.to_move and (
                     move - 1) in state.board.keys() and state.board[move - 1] == state.to_move:
                 return True
 
