@@ -7,3 +7,4 @@ O jogo de trilha deve ser feito para jogar contra a inteligência artificial usa
   
   
 - [AIMA para Python](https://github.com/aimacode/aima-python)
+- [Instalação do KIVY](https://kivy.org/docs/installation/installation-windows.html)
